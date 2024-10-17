@@ -1,12 +1,16 @@
+#include "indicators/setting.hpp"
 #include <argparse/argparse.hpp>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <indicators/block_progress_bar.hpp>
+#include <indicators/cursor_control.hpp>
 #include <iostream>
 #include <string>
 #include <vector>
 
 namespace fs = std::filesystem;
+namespace ind = indicators;
 
 void print_vector(std::vector<int16_t> &vec) {
   for (auto v : vec)
@@ -80,6 +84,18 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  // indicators stuff
+  ind::show_console_cursor(false);
+
+  ind::BlockProgressBar bar{ind::option::BarWidth{80},
+                            ind::option::Start{"["},
+                            ind::option::End{"]"},
+                            ind::option::ShowElapsedTime(true),
+                            ind::option::ShowRemainingTime(true),
+                            ind::option::ForegroundColor{ind::Color::white},
+                            ind::option::FontStyles{std::vector<ind::FontStyle>{
+                                ind::FontStyle::bold}}};
+
   // fs::path full_path(fs::initial_path());
   // check the input file exists
   fs::path input_file_path(input_file);
@@ -89,6 +105,7 @@ int main(int argc, char *argv[]) {
               << std::endl;
     return 1;
   }
+  auto n_cols = fs::file_size(input_file_path) / n_channels / sizeof(int16_t);
   // input file stream
   std::ifstream fin(input_file_path, std::ifstream::binary);
   // output file stream
@@ -96,19 +113,23 @@ int main(int argc, char *argv[]) {
   std::ofstream fout(output_file_path, std::ofstream::binary);
 
   std::vector<int16_t> buffer(n_channels, 0);
-  int column_count = 0;
-  while (fin.read(reinterpret_cast<char *>(buffer.data()),
-                  n_channels * sizeof(int16_t))) {
-    auto count = fin.gcount();
-    if (add_n_rows > 0) {
-      auto out_buf = extend_buffer(buffer, add_n_rows, fill_value);
-      fout.write((char *)&out_buf[0], out_buf.size() * sizeof(int16_t));
+  double column_count = 0;
+  if (add_n_columns > 0 || add_n_rows > 0 || remove_n_columns > 0 ||
+      remove_n_rows > 0) {
+    while (fin.read(reinterpret_cast<char *>(buffer.data()),
+                    n_channels * sizeof(int16_t))) {
+      auto count = fin.gcount();
+      if (add_n_rows > 0) {
+        auto out_buf = extend_buffer(buffer, add_n_rows, fill_value);
+        fout.write((char *)&out_buf[0], out_buf.size() * sizeof(int16_t));
+      }
+      if (remove_n_rows) {
+        auto out_buf = truncate_buffer(buffer, remove_n_rows);
+        fout.write((char *)&out_buf[0], out_buf.size() * sizeof(int16_t));
+      }
+      ++column_count;
+      bar.set_progress((column_count / n_cols) * 100);
     }
-    if (remove_n_rows) {
-      auto out_buf = truncate_buffer(buffer, remove_n_rows);
-      fout.write((char *)&out_buf[0], out_buf.size() * sizeof(int16_t));
-    }
-    ++column_count;
   }
   if (fin.is_open()) {
     fin.close();
@@ -116,5 +137,6 @@ int main(int argc, char *argv[]) {
   if (fout.is_open()) {
     fout.close();
   }
+  ind::show_console_cursor(true);
   return 0;
 }

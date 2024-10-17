@@ -21,10 +21,17 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/p-ranav/argparse.git
 )
 FetchContent_MakeAvailable(argparse)
+message(STATUS "Fetching indicators...")
+FetchContent_Declare(
+  indicators
+  GIT_REPOSITORY https://github.com/p-ranav/indicators.git
+)
+FetchContent_MakeAvailable(indicators)
 
 set( SOURCES src/main.cpp )
 add_executable( ${PROJECT_NAME} ${SOURCES} )
 target_link_libraries( ${PROJECT_NAME}
  PUBLIC
  argparse
+ indicators
 )
