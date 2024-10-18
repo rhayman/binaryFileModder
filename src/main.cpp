@@ -18,14 +18,14 @@ void print_vector(std::vector<int16_t> &vec) {
   std::cout << std::endl;
 }
 
-std::vector<int16_t> truncate_buffer(std::vector<int16_t> vec,
-                                     int n_rows_to_remove) {
+std::vector<int16_t> remove_rows(std::vector<int16_t> vec,
+                                 int n_rows_to_remove) {
   std::vector<int16_t> out(vec.begin() + 1, vec.end() - n_rows_to_remove);
   return out;
 }
 
-std::vector<int16_t> extend_buffer(std::vector<int16_t> vec, int n_elems_to_add,
-                                   int fill_value) {
+std::vector<int16_t> add_rows(std::vector<int16_t> vec, int n_elems_to_add,
+                              int fill_value) {
   std::vector<int16_t> b(n_elems_to_add, fill_value);
   vec.insert(std::end(vec), std::begin(b), std::end(b));
   return vec;
@@ -120,12 +120,21 @@ int main(int argc, char *argv[]) {
                     n_channels * sizeof(int16_t))) {
       auto count = fin.gcount();
       if (add_n_rows > 0) {
-        auto out_buf = extend_buffer(buffer, add_n_rows, fill_value);
+        auto out_buf = add_rows(buffer, add_n_rows, fill_value);
         fout.write((char *)&out_buf[0], out_buf.size() * sizeof(int16_t));
       }
-      if (remove_n_rows) {
-        auto out_buf = truncate_buffer(buffer, remove_n_rows);
+      if (remove_n_rows > 0) {
+        auto out_buf = remove_rows(buffer, remove_n_rows);
         fout.write((char *)&out_buf[0], out_buf.size() * sizeof(int16_t));
+      }
+      if (add_n_columns > 0) {
+      }
+      if (remove_n_columns > 0) {
+        if (column_count == (n_cols - remove_n_columns)) {
+          bar.set_progress(100);
+          break;
+        }
+        fout.write((char *)&buffer[0], buffer.size() * sizeof(int16_t));
       }
       ++column_count;
       bar.set_progress((column_count / n_cols) * 100);
