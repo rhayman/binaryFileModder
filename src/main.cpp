@@ -33,7 +33,7 @@ std::vector<int16_t> add_rows(std::vector<int16_t> vec, int n_elems_to_add,
 
 int main(int argc, char *argv[]) {
 
-  argparse::ArgumentParser program("program_name");
+  argparse::ArgumentParser program("binaryFileModder", "0.0.1");
 
   std::string input_file;
   program.add_argument("-i", "--input")
@@ -43,17 +43,17 @@ int main(int argc, char *argv[]) {
 
   std::string output_file = "output.dat";
   program.add_argument("-o", "--output")
-      .help("The output file name")
+      .help("The output file name (default=output.dat)")
       .store_into(output_file);
 
   int n_channels = 64;
   program.add_argument("-n", "--n_channels")
-      .help("The number of channels in the input file")
+      .help("The number of channels in the input file (default=64)")
       .store_into(n_channels);
 
   int16_t fill_value = 0;
   program.add_argument("-f", "--fill_value")
-      .help("The fill value for adding data file name")
+      .help("The fill value for adding data file name (default=0)")
       .store_into(fill_value);
 
   int add_n_rows = 0;
@@ -101,8 +101,7 @@ int main(int argc, char *argv[]) {
   fs::path input_file_path(input_file);
 
   if (!fs::exists(input_file_path)) {
-    std::cout << "File " << input_file_path << " does not exist"
-              << std::endl;
+    std::cout << "File " << input_file_path << " does not exist" << std::endl;
     return 1;
   }
   auto n_cols = fs::file_size(input_file_path) / n_channels / sizeof(int16_t);
