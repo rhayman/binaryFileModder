@@ -138,5 +138,11 @@ int main(int argc, char *argv[]) {
     fout.close();
   }
   ind::show_console_cursor(true);
+
+  if (add_n_columns > 0 || add_n_rows > 0 || remove_n_columns > 0 ||
+      remove_n_rows > 0) {
+    std::cout << "\nOutput file: " << fs::canonical(output_file_path.native())
+              << std::endl;
+  }
   return 0;
 }
