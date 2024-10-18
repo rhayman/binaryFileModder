@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
   fs::path input_file_path(input_file);
 
   if (!fs::exists(input_file_path)) {
-    std::cout << "File " << input_file_path.native() << " does not exist"
+    std::cout << "File " << input_file_path << " does not exist"
               << std::endl;
     return 1;
   }
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
 
   if (add_n_columns > 0 || add_n_rows > 0 || remove_n_columns > 0 ||
       remove_n_rows > 0) {
-    std::cout << "\nOutput file: " << fs::canonical(output_file_path.native())
+    std::cout << "\nOutput file: " << fs::canonical(output_file_path)
               << std::endl;
   }
   return 0;
