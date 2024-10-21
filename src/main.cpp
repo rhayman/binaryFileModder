@@ -31,6 +31,27 @@ std::vector<int16_t> add_rows(std::vector<int16_t> vec, int n_elems_to_add,
   return vec;
 }
 
+bool add_columns(fs::path in, fs::path out, int n_columns_to_add,
+                 int fill_value, int n_channels) {
+  // copy the file to a new location first
+  auto result = fs::copy_file(in, out, fs::copy_options::overwrite_existing);
+  // now open out to append columns
+  // create the column first
+  std::vector<int16_t> column(n_channels, fill_value);
+  std::fstream strm(out, std::ios::in | std::ios::out | std::ios::binary);
+  if (!strm.is_open()) {
+    std::cout << "Failed to open: " << out << std::endl;
+    return false;
+  } else {
+    // go to end of file
+    strm.seekg(0, std::ios::end);
+    for (int i = 0; i < n_columns_to_add; ++i) {
+      strm.write((char *)&column[0], column.size() * sizeof(int16_t));
+    }
+  }
+  return true;
+}
+
 int main(int argc, char *argv[]) {
 
   argparse::ArgumentParser program("binaryFileModder", "0.0.1");
@@ -127,6 +148,15 @@ int main(int argc, char *argv[]) {
         fout.write((char *)&out_buf[0], out_buf.size() * sizeof(int16_t));
       }
       if (add_n_columns > 0) {
+        // can do faster using memcpy then appending to end of copy
+        // so done last of all - this will copy the original file NOT
+        // the new one so if you want to add columns AND remove/add rows
+        // then you'd need to call this program twice, once for each
+        // operation
+        add_columns(input_file_path, output_file_path, add_n_columns,
+                    fill_value, n_channels);
+        bar.set_progress(100);
+        break;
       }
       if (remove_n_columns > 0) {
         if (column_count == (n_cols - remove_n_columns)) {
